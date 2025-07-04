@@ -23,6 +23,7 @@ class OmniDateTimePicker extends StatefulWidget {
   final int secondsInterval;
   final bool isForce2Digits;
   final bool looping;
+  final bool untilNow;
 
   final Widget selectionOverlay;
 
@@ -44,6 +45,7 @@ class OmniDateTimePicker extends StatefulWidget {
     this.secondsInterval = 1,
     this.isForce2Digits = true,
     this.looping = true,
+    this.untilNow = false,
     this.selectionOverlay = const CupertinoPickerDefaultSelectionOverlay(),
     this.separator,
     this.type = OmniDateTimePickerType.dateAndTime,
@@ -104,6 +106,7 @@ class _OmniDateTimePickerState extends State<OmniDateTimePicker> {
                     secondsInterval: widget.secondsInterval,
                     isForce2Digits: widget.isForce2Digits,
                     looping: widget.looping,
+                    untilNow: widget.untilNow,
                     selectionOverlay: widget.selectionOverlay,
                   ),
               ],

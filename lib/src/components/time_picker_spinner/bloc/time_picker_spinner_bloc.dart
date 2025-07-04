@@ -2,8 +2,10 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omni_datetime_picker/src/components/time_picker_spinner/bloc/utils.dart';
+import 'package:omni_datetime_picker/src/utils/date_time_extensions.dart';
 
 part 'time_picker_spinner_event.dart';
+
 part 'time_picker_spinner_state.dart';
 
 class TimePickerSpinnerBloc
@@ -15,6 +17,7 @@ class TimePickerSpinnerBloc
   final int minutesInterval;
   final int secondsInterval;
   final bool isForce2Digits;
+  final bool untilNow;
   final DateTime firstDateTime;
   final DateTime lastDateTime;
   final DateTime initialDateTime;
@@ -27,6 +30,7 @@ class TimePickerSpinnerBloc
     required this.minutesInterval,
     required this.secondsInterval,
     required this.isForce2Digits,
+    required this.untilNow,
     required this.firstDateTime,
     required this.lastDateTime,
     required this.initialDateTime,
@@ -119,6 +123,10 @@ class TimePickerSpinnerBloc
   }
 
   List<String> _generateHours() {
+    final now = DateTime.now();
+    final bool isToday = untilNow && lastDateTime.isSameDate(now);
+    final int maxHour = isToday ? now.hour : (is24HourMode ? 23 : 12);
+
     final List<String> hours = List.generate(
       is24HourMode ? 24 : 12,
       (index) {
@@ -127,18 +135,30 @@ class TimePickerSpinnerBloc
         }
         return '$index';
       },
-    );
+    ).where((h) {
+      final parsed = int.tryParse(h) ?? 0;
+      return parsed <= maxHour;
+    }).toList();
 
     return hours;
   }
 
   List<String> _generateMinutes() {
+    final now = DateTime.now();
+    final bool isToday = untilNow && lastDateTime.isSameDate(now);
+
+    final int maxMinute = isToday ? now.minute : 60;
+
     final List<String> minutes = List.generate(
       (60 / minutesInterval).floor(),
       (index) {
         return '${index * minutesInterval}';
       },
-    );
+    ).where((h) {
+      final parsed = int.tryParse(h) ?? 0;
+      return parsed <= maxMinute;
+    }).toList();
+
     return minutes;
   }
 

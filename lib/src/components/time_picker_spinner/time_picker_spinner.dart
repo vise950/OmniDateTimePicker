@@ -12,6 +12,7 @@ class TimePickerSpinner extends StatelessWidget {
   final int minutesInterval;
   final int secondsInterval;
   final bool isForce2Digits;
+  final bool untilNow;
 
   final double height;
   final double diameterRatio;
@@ -29,6 +30,7 @@ class TimePickerSpinner extends StatelessWidget {
     this.squeeze = 1,
     this.magnification = 1.1,
     this.looping = false,
+    this.untilNow = false,
     this.selectionOverlay = const CupertinoPickerDefaultSelectionOverlay(),
     required this.amText,
     required this.pmText,
@@ -52,6 +54,7 @@ class TimePickerSpinner extends StatelessWidget {
         minutesInterval: minutesInterval,
         secondsInterval: secondsInterval,
         isForce2Digits: isForce2Digits,
+        untilNow: untilNow,
         firstDateTime: datetimeBloc.state.firstDate,
         lastDateTime: datetimeBloc.state.lastDate,
         initialDateTime: datetimeBloc.state.dateTime,

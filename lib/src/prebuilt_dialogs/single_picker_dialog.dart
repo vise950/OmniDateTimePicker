@@ -24,6 +24,7 @@ class SinglePickerDialog extends StatelessWidget {
   final bool? isForce2Digits;
   final bool? looping;
   final Widget? selectionOverlay;
+  final bool? untilNow;
 
   final EdgeInsets? padding;
   final EdgeInsets? insetPadding;
@@ -51,6 +52,7 @@ class SinglePickerDialog extends StatelessWidget {
     this.isForce2Digits,
     this.looping,
     this.selectionOverlay,
+    this.untilNow,
     this.padding,
     this.insetPadding,
     this.borderRadius,
@@ -98,6 +100,7 @@ class SinglePickerDialog extends StatelessWidget {
                     secondsInterval: secondsInterval ?? 1,
                     isForce2Digits: isForce2Digits ?? true,
                     looping: looping ?? true,
+                    untilNow: untilNow ?? false,
                     selectionOverlay: selectionOverlay ??
                         const CupertinoPickerDefaultSelectionOverlay(),
                     separator: separator,
