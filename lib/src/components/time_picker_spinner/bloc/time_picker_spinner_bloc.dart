@@ -36,6 +36,7 @@ class TimePickerSpinnerBloc
     required this.initialDateTime,
   }) : super(TimePickerSpinnerInitial()) {
     on<Initialize>(_initialize);
+    on<UpdateSelectedDateEvent>(_onSelectedDateChanged);
 
     if (state is TimePickerSpinnerInitial) {
       add(Initialize());
@@ -44,12 +45,13 @@ class TimePickerSpinnerBloc
 
   Future<void> _initialize(TimePickerSpinnerEvent event,
       Emitter<TimePickerSpinnerState> emit) async {
-    final hours = _generateHours();
-    final minutes = _generateMinutes();
+    final now = initialDateTime;
+
+    final hours = _generateHours(now);
+    final minutes = _generateMinutes(now, now.hour);
     final seconds = _generateSeconds();
     final abbreviations = _generateAbbreviations();
 
-    final now = initialDateTime;
     final initialHourIndex = _getInitialHourIndex(hours: hours, now: now);
     final initialMinuteIndex =
         _getInitialMinuteIndex(minutes: minutes, now: now);
@@ -60,6 +62,14 @@ class TimePickerSpinnerBloc
 
     final abbreviationController = FixedExtentScrollController(
       initialItem: initialAbbreviationIndex,
+    );
+
+    final hourController = FixedExtentScrollController(
+      initialItem: initialHourIndex,
+    );
+
+    final minuteController = FixedExtentScrollController(
+      initialItem: initialMinuteIndex,
     );
 
     emit(TimePickerSpinnerLoaded(
@@ -75,6 +85,8 @@ class TimePickerSpinnerBloc
       initialSecondIndex: initialSecondIndex,
       initialAbbreviationIndex: initialAbbreviationIndex,
       abbreviationController: abbreviationController,
+      hourController: hourController,
+      minuteController: minuteController,
     ));
   }
 
@@ -122,9 +134,40 @@ class TimePickerSpinnerBloc
     }
   }
 
-  List<String> _generateHours() {
+  Future<void> _onSelectedDateChanged(UpdateSelectedDateEvent event,
+      Emitter<TimePickerSpinnerState> emit) async {
+    final currentState = state;
+    if (currentState is! TimePickerSpinnerLoaded) return;
+
+    final selectedDate = event.selectedDate;
+
+    final updatedHours = _generateHours(selectedDate);
+    final updatedMinutes = _generateMinutes(selectedDate, selectedDate.hour);
+
+    final newHourIndex =
+        _getInitialHourIndex(hours: updatedHours, now: selectedDate);
+    final newMinuteIndex =
+        _getInitialMinuteIndex(minutes: updatedMinutes, now: selectedDate);
+
+    final newHourController =
+        FixedExtentScrollController(initialItem: newHourIndex);
+    final newMinuteController =
+        FixedExtentScrollController(initialItem: newMinuteIndex);
+
+    emit(currentState.copyWith(
+      hours: updatedHours,
+      minutes: updatedMinutes,
+      initialHourIndex: newHourIndex,
+      initialMinuteIndex: newMinuteIndex,
+      hourController: newHourController,
+      minuteController: newMinuteController,
+    ));
+  }
+
+  List<String> _generateHours(DateTime forDate) {
     final now = DateTime.now();
-    final bool isToday = untilNow && lastDateTime.isSameDate(now);
+    final isToday = untilNow && forDate.isSameDate(now);
+
     final int maxHour = isToday ? now.hour : (is24HourMode ? 23 : 12);
 
     final List<String> hours = List.generate(
@@ -143,23 +186,25 @@ class TimePickerSpinnerBloc
     return hours;
   }
 
-  List<String> _generateMinutes() {
+  List<String> _generateMinutes(DateTime forDate, int selectedHour) {
     final now = DateTime.now();
-    final bool isToday = untilNow && lastDateTime.isSameDate(now);
+    final isToday = untilNow && forDate.isSameDate(now);
 
-    final int maxMinute = isToday ? now.minute : 60;
+    int maxMinute = 59;
 
-    final List<String> minutes = List.generate(
+    if (isToday) {
+      if (selectedHour == now.hour) {
+        maxMinute = now.minute;
+      }
+    }
+
+    return List.generate(
       (60 / minutesInterval).floor(),
-      (index) {
-        return '${index * minutesInterval}';
-      },
-    ).where((h) {
-      final parsed = int.tryParse(h) ?? 0;
+      (index) => '${index * minutesInterval}',
+    ).where((minuteStr) {
+      final parsed = int.tryParse(minuteStr) ?? 0;
       return parsed <= maxMinute;
     }).toList();
-
-    return minutes;
   }
 
   List<String> _generateSeconds() {

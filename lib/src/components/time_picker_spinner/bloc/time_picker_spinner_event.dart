@@ -8,3 +8,9 @@ sealed class TimePickerSpinnerEvent extends Equatable {
 }
 
 final class Initialize extends TimePickerSpinnerEvent {}
+
+final class UpdateSelectedDateEvent extends TimePickerSpinnerEvent {
+  final DateTime selectedDate;
+
+  const UpdateSelectedDateEvent(this.selectedDate);
+}

@@ -45,50 +45,124 @@ class TimePickerSpinner extends StatelessWidget {
   Widget build(BuildContext context) {
     final datetimeBloc = context.read<OmniDatetimePickerBloc>();
 
-    return BlocProvider(
-      create: (context) => TimePickerSpinnerBloc(
-        amText: amText,
-        pmText: pmText,
-        isShowSeconds: isShowSeconds,
-        is24HourMode: is24HourMode,
-        minutesInterval: minutesInterval,
-        secondsInterval: secondsInterval,
-        isForce2Digits: isForce2Digits,
-        untilNow: untilNow,
-        firstDateTime: datetimeBloc.state.firstDate,
-        lastDateTime: datetimeBloc.state.lastDate,
-        initialDateTime: datetimeBloc.state.dateTime,
-      ),
-      child: BlocConsumer<TimePickerSpinnerBloc, TimePickerSpinnerState>(
-        listenWhen: (previous, current) {
-          if (previous is TimePickerSpinnerInitial &&
-              current is TimePickerSpinnerLoaded) {
-            return true;
-          }
+    return BlocConsumer<TimePickerSpinnerBloc, TimePickerSpinnerState>(
+      listenWhen: (previous, current) {
+        if (previous is TimePickerSpinnerInitial &&
+            current is TimePickerSpinnerLoaded) {
+          return true;
+        }
 
-          return false;
-        },
-        listener: (context, state) {
-          if (state is TimePickerSpinnerLoaded) {
-            datetimeBloc.add(UpdateMinute(
-                minute: int.parse(state.minutes[state.initialMinuteIndex])));
+        return false;
+      },
+      listener: (context, state) {
+        if (state is TimePickerSpinnerLoaded) {
+          datetimeBloc.add(UpdateMinute(
+              minute: int.parse(state.minutes[state.initialMinuteIndex])));
 
-            datetimeBloc.add(UpdateSecond(
-                second: int.parse(state.seconds[state.initialSecondIndex])));
-          }
-        },
-        builder: (context, state) {
-          if (state is TimePickerSpinnerLoaded) {
-            return SizedBox(
-              height: height,
-              child: Row(
-                textDirection: TextDirection.ltr,
-                children: [
-                  /// Hours
+          datetimeBloc.add(UpdateSecond(
+              second: int.parse(state.seconds[state.initialSecondIndex])));
+        }
+      },
+      builder: (context, state) {
+        if (state is TimePickerSpinnerLoaded) {
+          return SizedBox(
+            height: height,
+            child: Row(
+              textDirection: TextDirection.ltr,
+              children: [
+                /// Hours
+                Expanded(
+                  child: CupertinoPicker(
+                    scrollController: state.hourController,
+                    diameterRatio: diameterRatio,
+                    itemExtent: itemExtent,
+                    squeeze: squeeze,
+                    magnification: magnification,
+                    looping: looping,
+                    selectionOverlay: selectionOverlay,
+                    onSelectedItemChanged: (index) {
+                      final datetimeBloc =
+                          context.read<OmniDatetimePickerBloc>();
+                      final spinnerBloc = context.read<TimePickerSpinnerBloc>();
+
+                      int selectedHour;
+                      if (!is24HourMode) {
+                        final hourOffset =
+                            state.abbreviationController.selectedItem == 1
+                                ? 12
+                                : 0;
+                        selectedHour = index + hourOffset;
+                      } else {
+                        selectedHour = int.parse(state.hours[index]);
+                      }
+
+                      // Aggiorna ora nel bloc principale
+                      datetimeBloc.add(UpdateHour(hour: selectedHour));
+
+                      // Ricostruisci la data completa con ora aggiornata ma minuti e secondi attuali
+                      final oldDateTime = datetimeBloc.state.dateTime;
+                      final updatedDateTime = DateTime(
+                        oldDateTime.year,
+                        oldDateTime.month,
+                        oldDateTime.day,
+                        selectedHour,
+                        oldDateTime.minute,
+                        oldDateTime.second,
+                      );
+
+                      // Invio l'evento con la data aggiornata al bloc spinner
+                      spinnerBloc.add(UpdateSelectedDateEvent(updatedDateTime));
+                    },
+                    children: List.generate(
+                      growable: false,
+                      state.hours.length,
+                      (index) {
+                        String hour = state.hours[index];
+
+                        if (isForce2Digits) {
+                          hour = hour.padLeft(2, '0');
+                        }
+
+                        return Center(child: Text(hour));
+                      },
+                    ),
+                  ),
+                ),
+
+                /// Minutes
+                Expanded(
+                  child: CupertinoPicker(
+                    scrollController: state.minuteController,
+                    diameterRatio: diameterRatio,
+                    itemExtent: itemExtent,
+                    squeeze: squeeze,
+                    magnification: magnification,
+                    looping: looping,
+                    selectionOverlay: selectionOverlay,
+                    onSelectedItemChanged: (index) {
+                      datetimeBloc.add(UpdateMinute(
+                          minute: int.parse(state.minutes[index])));
+                    },
+                    children: List.generate(
+                      state.minutes.length,
+                      (index) {
+                        String minute = state.minutes[index];
+
+                        if (isForce2Digits) {
+                          minute = minute.padLeft(2, '0');
+                        }
+                        return Center(child: Text(minute));
+                      },
+                    ),
+                  ),
+                ),
+
+                /// Seconds
+                if (isShowSeconds)
                   Expanded(
                     child: CupertinoPicker(
                       scrollController: FixedExtentScrollController(
-                        initialItem: state.initialHourIndex,
+                        initialItem: state.initialSecondIndex,
                       ),
                       diameterRatio: diameterRatio,
                       itemExtent: itemExtent,
@@ -97,131 +171,56 @@ class TimePickerSpinner extends StatelessWidget {
                       looping: looping,
                       selectionOverlay: selectionOverlay,
                       onSelectedItemChanged: (index) {
-                        if (!is24HourMode) {
-                          final hourOffset =
-                              state.abbreviationController.selectedItem == 1
-                                  ? 12
-                                  : 0;
+                        datetimeBloc.add(UpdateSecond(
+                            second: int.parse(state.seconds[index])));
+                      },
+                      children: List.generate(
+                        state.seconds.length,
+                        (index) {
+                          String second = state.seconds[index];
 
+                          if (isForce2Digits) {
+                            second = second.padLeft(2, '0');
+                          }
+
+                          return Center(child: Text(second));
+                        },
+                      ),
+                    ),
+                  ),
+
+                /// AM/PM
+                if (!is24HourMode)
+                  Expanded(
+                    child: CupertinoPicker.builder(
+                      scrollController: state.abbreviationController,
+                      diameterRatio: diameterRatio,
+                      itemExtent: itemExtent,
+                      squeeze: squeeze,
+                      magnification: magnification,
+                      selectionOverlay: selectionOverlay,
+                      onSelectedItemChanged: (index) {
+                        if (index == 0) {
                           datetimeBloc
-                              .add(UpdateHour(hour: index + hourOffset));
+                              .add(const UpdateAbbreviation(isPm: false));
                         } else {
-                          datetimeBloc.add(
-                              UpdateHour(hour: int.parse(state.hours[index])));
+                          datetimeBloc
+                              .add(const UpdateAbbreviation(isPm: true));
                         }
                       },
-                      children: List.generate(
-                        growable: false,
-                        state.hours.length,
-                        (index) {
-                          String hour = state.hours[index];
-
-                          if (isForce2Digits) {
-                            hour = hour.padLeft(2, '0');
-                          }
-
-                          return Center(child: Text(hour));
-                        },
-                      ),
-                    ),
-                  ),
-
-                  /// Minutes
-                  Expanded(
-                    child: CupertinoPicker(
-                      scrollController: FixedExtentScrollController(
-                        initialItem: state.initialMinuteIndex,
-                      ),
-                      diameterRatio: diameterRatio,
-                      itemExtent: itemExtent,
-                      squeeze: squeeze,
-                      magnification: magnification,
-                      looping: looping,
-                      selectionOverlay: selectionOverlay,
-                      onSelectedItemChanged: (index) {
-                        datetimeBloc.add(UpdateMinute(
-                            minute: int.parse(state.minutes[index])));
+                      childCount: state.abbreviations.length,
+                      itemBuilder: (context, index) {
+                        return Center(child: Text(state.abbreviations[index]));
                       },
-                      children: List.generate(
-                        state.minutes.length,
-                        (index) {
-                          String minute = state.minutes[index];
-
-                          if (isForce2Digits) {
-                            minute = minute.padLeft(2, '0');
-                          }
-                          return Center(child: Text(minute));
-                        },
-                      ),
                     ),
                   ),
+              ],
+            ),
+          );
+        }
 
-                  /// Seconds
-                  if (isShowSeconds)
-                    Expanded(
-                      child: CupertinoPicker(
-                        scrollController: FixedExtentScrollController(
-                          initialItem: state.initialSecondIndex,
-                        ),
-                        diameterRatio: diameterRatio,
-                        itemExtent: itemExtent,
-                        squeeze: squeeze,
-                        magnification: magnification,
-                        looping: looping,
-                        selectionOverlay: selectionOverlay,
-                        onSelectedItemChanged: (index) {
-                          datetimeBloc.add(UpdateSecond(
-                              second: int.parse(state.seconds[index])));
-                        },
-                        children: List.generate(
-                          state.seconds.length,
-                          (index) {
-                            String second = state.seconds[index];
-
-                            if (isForce2Digits) {
-                              second = second.padLeft(2, '0');
-                            }
-
-                            return Center(child: Text(second));
-                          },
-                        ),
-                      ),
-                    ),
-
-                  /// AM/PM
-                  if (!is24HourMode)
-                    Expanded(
-                      child: CupertinoPicker.builder(
-                        scrollController: state.abbreviationController,
-                        diameterRatio: diameterRatio,
-                        itemExtent: itemExtent,
-                        squeeze: squeeze,
-                        magnification: magnification,
-                        selectionOverlay: selectionOverlay,
-                        onSelectedItemChanged: (index) {
-                          if (index == 0) {
-                            datetimeBloc
-                                .add(const UpdateAbbreviation(isPm: false));
-                          } else {
-                            datetimeBloc
-                                .add(const UpdateAbbreviation(isPm: true));
-                          }
-                        },
-                        childCount: state.abbreviations.length,
-                        itemBuilder: (context, index) {
-                          return Center(
-                              child: Text(state.abbreviations[index]));
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          }
-
-          return const SizedBox();
-        },
-      ),
+        return const SizedBox();
+      },
     );
   }
 }

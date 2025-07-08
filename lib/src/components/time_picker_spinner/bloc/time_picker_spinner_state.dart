@@ -23,6 +23,8 @@ final class TimePickerSpinnerLoaded extends TimePickerSpinnerState {
   final int initialSecondIndex;
   final int initialAbbreviationIndex;
   final FixedExtentScrollController abbreviationController;
+  final FixedExtentScrollController hourController;
+  final FixedExtentScrollController minuteController;
 
   const TimePickerSpinnerLoaded({
     required this.allHours,
@@ -37,6 +39,8 @@ final class TimePickerSpinnerLoaded extends TimePickerSpinnerState {
     required this.initialSecondIndex,
     required this.initialAbbreviationIndex,
     required this.abbreviationController,
+    required this.hourController,
+    required this.minuteController,
   });
 
   @override
@@ -53,6 +57,8 @@ final class TimePickerSpinnerLoaded extends TimePickerSpinnerState {
         initialSecondIndex,
         initialAbbreviationIndex,
         abbreviationController,
+        hourController,
+        minuteController,
       ];
 
   TimePickerSpinnerLoaded copyWith({
@@ -68,6 +74,8 @@ final class TimePickerSpinnerLoaded extends TimePickerSpinnerState {
     int? initialSecondIndex,
     int? initialAbbreviationIndex,
     FixedExtentScrollController? abbreviationController,
+    FixedExtentScrollController? hourController,
+    FixedExtentScrollController? minuteController,
     List<String>? firstHours,
     List<String>? firstMinutes,
     List<String>? firstSeconds,
@@ -90,6 +98,8 @@ final class TimePickerSpinnerLoaded extends TimePickerSpinnerState {
           initialAbbreviationIndex ?? this.initialAbbreviationIndex,
       abbreviationController:
           abbreviationController ?? this.abbreviationController,
+      hourController: hourController ?? this.hourController,
+      minuteController: minuteController ?? this.minuteController,
     );
   }
 }
